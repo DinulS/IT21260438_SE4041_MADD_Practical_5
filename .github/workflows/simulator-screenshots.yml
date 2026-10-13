@@ -34,18 +34,40 @@ jobs:
             xcrun simctl status_bar "$U" override --time 9:41 || true
           done
 
-      - name: Build and run UI tests on both watch sizes
+      - name: Build for testing
         run: |
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -project QuickTasks.xcodeproj \
             -scheme QuickTasks \
             -destination "id=$LARGE" \
+            -derivedDataPath DerivedData
+
+      # One watch at a time: running both destinations in one xcodebuild call crashed it
+      - name: Run UI tests on the large watch
+        run: |
+          xcodebuild test-without-building \
+            -project QuickTasks.xcodeproj \
+            -scheme QuickTasks \
+            -destination "id=$LARGE" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath Large.xcresult
+
+      - name: Run UI tests on the small watch
+        if: always()
+        run: |
+          xcodebuild test-without-building \
+            -project QuickTasks.xcodeproj \
+            -scheme QuickTasks \
             -destination "id=$SMALL" \
-            -resultBundlePath TestResults.xcresult
+            -derivedDataPath DerivedData \
+            -resultBundlePath Small.xcresult
 
       - name: Export screenshots
         if: always()
-        run: xcrun xcresulttool export attachments --path TestResults.xcresult --output-path attachments
+        run: |
+          for R in Large Small; do
+            [ -d "$R.xcresult" ] && xcrun xcresulttool export attachments --path "$R.xcresult" --output-path "attachments/$R" || echo "No $R results"
+          done
 
       - uses: actions/upload-artifact@v4
         if: always()
