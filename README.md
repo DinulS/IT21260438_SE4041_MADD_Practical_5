@@ -1167,3 +1167,13 @@ and
 
 You have practised compact SwiftUI layouts, state, buttons, symbols, lists, navigation, and task completion on Apple Watch. A future extension is **iPhone ↔ Apple Watch communication using WatchConnectivity**.
 
+
+---
+
+## Completed App Screenshots
+
+Captured in the Apple Watch Ultra 3 (49mm) Simulator. The UI tests also passed on the Apple Watch SE 3 (40mm).
+
+![Main screen](screenshots/01-Main-Screen.png)
+![Completed tasks](screenshots/02-Completed-Tasks.png)
+![Task detail](screenshots/03-Task-Detail.png)
