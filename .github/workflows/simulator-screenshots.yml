@@ -1,0 +1,54 @@
+# Builds QuickTasks, runs the UI tests in two Apple Watch Simulator sizes and uploads the screenshots they capture.
+# Manual trigger only, because macOS runner minutes are limited.
+name: Watch Simulator UI tests and screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    runs-on: macos-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Pick a large and a small Apple Watch simulator
+        run: |
+          watches() { xcrun simctl list devices available -j | jq -c '[.devices | to_entries[] | select(.key | contains("watchOS")) | .value[]]'; }
+          if [ "$(watches | jq length)" = "0" ]; then
+            echo "No watch simulators found, downloading the watchOS platform"
+            xcodebuild -downloadPlatform watchOS
+          fi
+          W=$(watches)
+          echo "$W" | jq -r '.[] | "\(.name)  \(.udid)"'
+          LARGE=$(echo "$W" | jq -r '((map(select(.name | test("Ultra"))) | last) // last) | .udid')
+          SMALL=$(echo "$W" | jq -r --arg l "$LARGE" '((map(select(.udid != $l and (.name | test("4[012]mm")))) | last) // (map(select(.udid != $l)) | first)) | .udid')
+          echo "LARGE=$LARGE" >> "$GITHUB_ENV"
+          echo "SMALL=$SMALL" >> "$GITHUB_ENV"
+          for U in $LARGE $SMALL; do
+            xcrun simctl boot "$U"
+            xcrun simctl bootstatus "$U"
+            xcrun simctl status_bar "$U" override --time 9:41 || true
+          done
+
+      - name: Build and run UI tests on both watch sizes
+        run: |
+          xcodebuild test \
+            -project QuickTasks.xcodeproj \
+            -scheme QuickTasks \
+            -destination "id=$LARGE" \
+            -destination "id=$SMALL" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Export screenshots
+        if: always()
+        run: xcrun xcresulttool export attachments --path TestResults.xcresult --output-path attachments
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: watch-simulator-screenshots
+          path: attachments
