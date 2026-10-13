@@ -116,7 +116,8 @@ final class QuickTasksUITests: XCTestCase {
         saveScreenshot(named: "03-Task-Detail")
 
         goBack()
-        XCTAssertTrue(app.buttons["toggle-Morning Walk"].waitForExistence(timeout: 5))
+        // The list is still scrolled to the details section, so check for the row we came from
+        XCTAssertTrue(app.buttons["details-Morning Walk"].waitForExistence(timeout: 5), app.debugDescription)
         scrollToTop()
         toggle("Morning Walk").tap()
 
