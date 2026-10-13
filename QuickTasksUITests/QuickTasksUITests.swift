@@ -34,13 +34,19 @@ final class QuickTasksUITests: XCTestCase {
         reveal(app.buttons["toggle-\(title)"])
     }
 
+    // watchOS shows the back button as a round chevron in the top-left corner, not in a navigation bar
     @MainActor
     private func goBack() {
-        let back = app.navigationBars.buttons.firstMatch
-        if back.waitForExistence(timeout: 2) {
+        let screen = app.frame
+        // Skip the list's own rows, which can stay in the hierarchy behind the pushed screen
+        let back = app.buttons.allElementsBoundByIndex.first {
+            !$0.identifier.hasPrefix("toggle-") && !$0.identifier.hasPrefix("details-")
+                && $0.frame.minX < screen.width * 0.3 && $0.frame.minY < screen.height * 0.3
+        }
+        if let back {
             back.tap()
         } else {
-            app.swipeRight()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.15)).tap()
         }
     }
 
