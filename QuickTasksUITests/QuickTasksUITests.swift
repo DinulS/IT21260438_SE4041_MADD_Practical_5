@@ -10,26 +10,22 @@ final class QuickTasksUITests: XCTestCase {
         app = XCUIApplication()
     }
 
-    // Scrolls the list until the element is on screen (the watch shows only a few rows at a time)
+    // Scrolls with the Digital Crown until the element is on screen (the watch shows only a few rows at a time)
     @MainActor
     @discardableResult
     private func reveal(_ element: XCUIElement) -> XCUIElement {
-        var swipes = 0
-        while !(element.exists && element.isHittable) && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
+        for _ in 0..<15 where !(element.exists && element.isHittable) {
+            XCUIDevice.shared.rotateDigitalCrown(delta: 0.3, velocity: .default)
         }
-        XCTAssertTrue(element.isHittable, "\(element) is not on screen")
+        XCTAssertTrue(element.isHittable, "\(element) is not on screen\n\(app.debugDescription)")
         return element
     }
 
     @MainActor
     private func scrollToTop() {
         let header = app.staticTexts["completedCount"]
-        var swipes = 0
-        while !(header.exists && header.isHittable) && swipes < 8 {
-            app.swipeDown()
-            swipes += 1
+        for _ in 0..<15 where !(header.exists && header.isHittable) {
+            XCUIDevice.shared.rotateDigitalCrown(delta: -0.3, velocity: .default)
         }
     }
 
